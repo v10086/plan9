@@ -5,7 +5,7 @@ Apache License Version 2.0 see http://www.apache.org/licenses/LICENSE-2.0.html
 
 已用于视频cms、调研系统、金融支付、物联网等类型项目
 需要引入第三方类库的话直接composer 安装引入即可
-已由安全团队做了框架代码的安全审计
+已做框架代码的安全审计
 
 
 版本说明 
