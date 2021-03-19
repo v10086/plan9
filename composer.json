@@ -1,0 +1,25 @@
+{
+    "name": "v10086/plan9",
+    "description": "简单可靠的php web框架",
+    "type": "project",
+    "keywords": [
+        "framework",
+        "php",
+        "orm"
+    ],
+    "homepage": "https://github.com/v10086/plan9",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "zhongbo",
+            "email": "1146625863@qq.com"
+        }       
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "v10086/db": "v1.0",
+        "v10086/redis": "v1.0",
+        "v10086/redis-lock": "v1.0",
+        "v10086/redis-ratelimit": "v1.0"
+    }
+}
