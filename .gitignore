@@ -1,0 +1,6 @@
+/vendor/
+/nbproject/private/
+/public/nginx.htaccess
+/public/.htaccess
+/config/nginx/
+/composer.lock
