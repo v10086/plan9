@@ -14,12 +14,6 @@ define("VIEW_PATH", ROOT_PATH . DS . APP_NAME . DS . 'view'); //视图库
 
 define("CONF_PATH", ROOT_PATH . DS . 'config'); //配置文件路径
 
-define("CERT_PATH", ROOT_PATH . DS . 'cert'); //证书文件路径
-
-define("LOG_PATH", ROOT_PATH . DS . 'log'); //日志文件路径
-
-define("DATA_PATH", ROOT_PATH  . DS . 'data'); //数据文件存放路径
-
 define("VENDOR_PATH", ROOT_PATH . DS . 'vendor'); //第三方拓展路径
 
 define("API", explode('?', $_SERVER['REQUEST_URI'])[0]); //API路径
