@@ -1,7 +1,8 @@
 📃 开源协议
 Apache License Version 2.0 see http://www.apache.org/licenses/LICENSE-2.0.html
 
-# 一款简约 高效 可靠 的PHP web框架  5分钟入门 10分钟精通
+# 一款简约 高效 可靠 的PHP web框架  
+# 5分钟入门 10分钟精通
 
 
 已用于视频cms、调研系统、金融支付、物联网等类型项目  
