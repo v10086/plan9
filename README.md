@@ -87,11 +87,14 @@ return [
 			'password' => ''
 		],
 	],
-	'redis' => [ /* ... */ ]
-];
-```
 
-读取配置：
+		## 常见问题（FAQ）
+
+		- Q: 如何增加新的路由？
+			A: 在 `config/route.php` 中添加一条映射，确保对应 `controller` 类存在并有对应方法。
+
+		-- Q: 如何连接 Redis / MySQL？
+			A: 在 `config/database.php` 中配置连接信息；在运行时通过 `dbnew()` 获取 PDO，或创建 Redis 客户端（例如使用 `predis/predis` 或 PHP 的 `ext-redis` 扩展）并在业务代码中直接使用或封装为服务。
 
 ```php
 $val = config('database.mysql.default');
@@ -249,148 +252,6 @@ echo $email;
 
 
 
-## 要求
-- PHP >= 7.1（项目当前声明为 >=7.1，建议至少使用 7.4 或更高以获得更好语言特性与性能）
-- Composer（用于依赖管理）
-
----
-
-## 快速开始（开发环境）
-
-1. 克隆仓库或使用 composer create-project（如果发布到 packagist）：
-
-```powershell
-git clone https://github.com/v10086/plan9.git
-cd plan9
-composer install
-```
-
-2. 启动内置 PHP 开发服务器（仅用于本地开发）:
-
-```powershell
-# 在项目根目录下运行（Windows PowerShell）
-php -S localhost:8080 -t public
-```
-
-访问 http://localhost:8080/ 即可看到首页。
-
----
-
-## 项目目录概览
-
-根目录示例：
-
-```
-composer.json
-README.md
-app/
-	bootstrap.php
-	functions.php    # 全局 helper
-	controller/
-		Base.php
-		Index.php
-	view/
-		index.html
-config/
-	database.php
-	route.php
-public/
-	index.php
-```
-
-主要概念：
-- `public/index.php`：框架入口（请求分发与输出处理）
-- `config/`：配置文件（数据库、路由等）
-- `app/controller`：控制器（业务入口）
-- `app/view`：视图文件（简单 include/html）
-- `app/functions.php`：包含若干全局 helper 函数（http、config、dbnew 等）
-
----
-
-## 配置
-
-- `config/database.php`：包含 `mysql` 与 `redis` 的示例配置。建议不要把敏感凭据提交到仓库，建议使用环境变量（.env）并在 `app/bootstrap.php` 中读取。
-
-示例（简化）：
-
-```php
-return [
-	'mysql' => [
-		'default' => [ 'dsn' => 'mysql:host=127.0.0.1;dbname=xxx', 'user'=>'root', 'password'=>'' ]
-	],
-	'redis' => [ /* ... */ ]
-];
-```
-
----
-
-## 路由与请求分发
-
-- 路由定义在 `config/route.php`，格式：路由路径 => "控制器/类@方法"，例如：
-
-```php
-return [
-	'/' => 'controller/Index@index',
-	'/test' => 'controller/Index@test',
-];
-```
-
-- 在 `public/index.php` 中会根据 `API`（请求 URI）查找路由并实例化对应控制器类、调用指定方法。控制器方法可返回数组（将被 encode 为 JSON）或字符串（作为 HTML 输出）。
-
-示例：
-
-```php
-namespace controller;
-
-class Index extends Base {
-	public function index() {
-		$title = '首页';
-		include(VIEW_PATH . '/index.html');
-	}
-
-	public function test() {
-		return ['code'=>1, 'msg'=>'ok'];
-	}
-}
-```
-
----
-
-## 视图
-
-- 视图文件位于 `app/view`，当前项目使用简单的 PHP include 渲染静态 HTML 文件。为了安全建议对输出做转义或采用模板引擎（如 Twig）来避免 XSS。
-
----
-
-## 全局 helper（常用函数）
-
-文件 `app/functions.php` 提供了若干常用的辅助函数：
-
-- http / httpProxy / getCurl / httpMulti：基于 cURL 的 HTTP 请求工具
-- config($key)：读取 `config/*.php` 中的配置信息，参数格式如 `database.mysql.default`
-- fileSave：保存文件到指定目录（自动创建）
-- 日志：请使用 `monolog/monolog` 等成熟库进行日志分级与管理
-- encrypt / decrypt：简单的加解密封装
-- dbnew / dbexec：快速创建 PDO 连接并执行 SQL
-
-示例（读取配置）:
-
-```php
-$dbConf = config('database.mysql.default');
-$pdo = dbnew($dbConf);
-$rows = dbexec('SELECT * FROM users WHERE id=?', [1], $pdo);
-```
-
-注意：这些是全局函数，改动会影响全仓库。若要现代化，建议逐步将它们封装为服务并通过容器注入。
-
----
-
-## 重要说明
-
-当前代码库的核心运行时位于 `public/index.php`、`app/` 与 `config/`。早期示例中的 `app/library` 已被移除，仓库中仅保留基础运行和全局 helper（见下文）。
-
-本 README 仅包含运行与开发所需的最小说明，避免包含历史或已删除模块的说明。
-## 常见问题（FAQ）
 
 - Q: 如何增加新的路由？
 	A: 在 `config/route.php` 中添加一条映射，确保对应 `controller` 类存在并有对应方法。
