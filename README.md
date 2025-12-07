@@ -87,14 +87,9 @@ return [
 			'password' => ''
 		],
 	],
-
-		## 常见问题（FAQ）
-
-		- Q: 如何增加新的路由？
-			A: 在 `config/route.php` 中添加一条映射，确保对应 `controller` 类存在并有对应方法。
-
-		-- Q: 如何连接 Redis / MySQL？
-			A: 在 `config/database.php` 中配置连接信息；在运行时通过 `dbnew()` 获取 PDO，或创建 Redis 客户端（例如使用 `predis/predis` 或 PHP 的 `ext-redis` 扩展）并在业务代码中直接使用或封装为服务。
+	'redis' => [ /* ... */ ]
+];
+```
 
 ```php
 $val = config('database.mysql.default');
