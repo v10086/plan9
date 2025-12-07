@@ -160,29 +160,24 @@ $rows = dbexec('SELECT * FROM users WHERE id=?', [1], $pdo);
 
 ---
 
-## app/library 说明（常用工具）
+## 扩展工具与第三方库（说明：`app/library` 已删除）
 
-- `RedisQueue`：基于 Redis 的简单队列封装，静态使用方式：
+注意：当前代码库中已移除 `app/library` 目录（若你在早期分支或历史提交中看到了 `RedisQueue`、`WebSocketClient` 等实现，现已删除）。框架仍保留核心运行时与 helpers（见 `app/functions.php`、`app/controller`、`config` 等）。若需要队列、WebSocket 或其他工具，推荐以下替代方式：
 
-```php
-\library\RedisQueue::$redisHandler = $redisClient; // 需要事先创建 redis client
-\library\RedisQueue::push('job_queue', json_encode($task));
-$item = \library\RedisQueue::pop('job_queue');
-// 新增更语义化方法 getQueues()，旧方法 queues() 仍然可用（兼容）
-```
+- 使用 Composer 引入成熟库或客户端：
+	- Redis/队列：`predis/predis`、`ext-redis` + 自己封装队列逻辑，或使用更完整的队列系统（如 RabbitMQ/Beanstalkd/队列驱动）。
+	- WebSocket：若需要服务端 WebSocket，考虑 Swoole 或 Ratchet；若需要客户端，请使用现成的 WebSocket 客户端包。
 
-- `WebSocketClient`：一个简单的 WebSocket 客户端类，提供 `connect`, `sendData`, `checkConnection`, `disconnect` 等方法。内部私有方法命名已优化（不影响对外 API）。
-
-示例：
+示例：使用 Predis 做简单队列（示意）：
 
 ```php
-$ws = new \library\WebSocketClient();
-if ($ws->connect('127.0.0.1', 9502, '/')) {
-	$ws->sendData('hello');
-	$ws->disconnect();
-}
+// composer require predis/predis
+$client = new \Predis\Client(['host'=>'127.0.0.1']);
+$client->rpush('queue:job', json_encode($payload));
+$item = $client->lpop('queue:job');
 ```
 
+建议把工具封装成服务类（放在 `app/services` 或 `app/lib`），并通过简单工厂或容器注入到业务代码中，而不是放在全局 namespace 下。这样便于测试与替换。
 ---
 
 ## 日志与异常
