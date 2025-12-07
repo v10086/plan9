@@ -9,15 +9,207 @@ Apache License Version 2.0 see http://www.apache.org/licenses/LICENSE-2.0.html
 
 需要引入第三方类库的话直接composer 安装引入即可  
 
-📃 开源协议
-Apache License Version 2.0 — http://www.apache.org/licenses/LICENSE-2.0.html
+## Plan9 — 使用文档
 
-## Plan9 — 简约、高效、可靠的 PHP Web 框架
+这份文档基于当前仓库代码（2025-12-08），覆盖：项目概览、安装、目录结构、配置与运行、路由/控制器/视图、常用 helper、部署建议、开发规范与变更说明。
 
-本仓库是一款轻量级 PHP Web 框架，目标：极低学习成本、易扩展、在中小型服务/内部系统中能快速交付。
+如果你需要把文档进一步拆分为开发者手册或 API 文档，我可以继续扩展。
 
-本 README 包含：安装、快速运行、目录说明、路由/控制器/视图示例、常用 helper 与库使用示例、开发建议与兼容性说明。
+---
 
+## 1. 项目概览
+
+Plan9 是一个极简的 PHP Web 框架。它的设计目标是低学习成本、易于嵌入到小型服务或内部工具中。核心特点：
+
+- 单文件入口（`public/index.php`）负责路由匹配与响应输出。
+- 配置以 PHP 文件形式放在 `config/`。
+- 控制器采用类/方法映射，放在 `app/controller/`。
+- 提供若干全局 helper（`app/functions.php`）以便快速开发。
+
+注意：此前仓库中存在 `app/library`，用于一些工具类（例如 RedisQueue、WebSocketClient），但在当前分支这些已被删除。请查看 `CHANGELOG.md` 获取历史变更记录。
+
+---
+
+## 2. 环境要求
+
+- PHP >= 7.1（建议 >= 7.4）
+- Composer
+
+可选（按需）：MySQL、Redis 等服务
+
+---
+
+## 3. 安装与快速运行
+
+克隆并安装依赖：
+
+```powershell
+git clone <repo-url> plan9
+cd plan9
+composer install
+```
+
+本地开发（使用 PHP 内置服务器）：
+
+```powershell
+php -S localhost:8080 -t public
+```
+
+打开浏览器并访问 `http://localhost:8080/`。
+
+---
+
+## 4. 目录结构（说明）
+
+主要文件/目录：
+
+- `public/`：Web 入口（`public/index.php`）
+- `app/bootstrap.php`：框架初始化（常量定义、autoload 引导、bootstrap 注释位置）
+- `app/functions.php`：全局 helper（HTTP 工具、config 读取、日志、DB 快速创建等）
+- `app/controller/`：控制器目录（示例：`Index.php`）
+- `app/view/`：视图文件（HTML/PHP）
+- `config/`：配置目录（`database.php`、`route.php` 等）
+- `README.md`, `CHANGELOG.md`：项目说明与变更记录
+
+
+---
+
+## 5. 配置
+
+配置以 PHP 数组的形式放在 `config/` 下。示例：`config/database.php`：
+
+```php
+return [
+	'mysql' => [
+		'default' => [
+			'dsn' => 'mysql:host=127.0.0.1;dbname=yourdb;charset=utf8mb4',
+			'user' => 'root',
+			'password' => ''
+		],
+	],
+	'redis' => [ /* ... */ ]
+];
+```
+
+读取配置：
+
+```php
+$val = config('database.mysql.default');
+```
+
+注意：不要在仓库中直接提交敏感凭据，建议采用环境变量（`.env`）并在 `app/bootstrap.php` 中读取。
+
+---
+
+## 6. 路由与控制器
+
+路由定义在 `config/route.php`，格式为 `path => 'controller/Name@method'`。
+
+示例：
+
+```php
+return [
+	'/' => 'controller/Index@index',
+	'/test' => 'controller/Index@test',
+];
+```
+
+在 `public/index.php` 中，框架根据请求 URI 查找路由，实例化对应类并调用方法：
+
+- 控制器类位于 `app/controller`，命名空间为 `controller`。
+- 控制器方法可以返回数组（将被编码为 JSON）或字符串（作为 HTML 输出）。
+
+示例控制器：`app/controller/Index.php`
+
+```php
+namespace controller;
+
+class Index extends Base {
+	public function index() {
+		include(VIEW_PATH . '/index.html');
+	}
+	public function test() {
+		return ['code'=>1, 'msg'=>'ok'];
+	}
+}
+```
+
+---
+
+## 7. 视图
+
+视图放在 `app/view`，当前框架使用直接 `include` 渲染静态 HTML。为防止 XSS，建议在渲染前对用户数据做转义，或迁移到模板引擎（例如 Twig）以自动转义。
+
+---
+
+## 8. 常用 helper（`app/functions.php`）
+
+该文件包含：
+
+- HTTP 客户端工具：`http`, `httpProxy`, `getCurl`, `httpMulti`
+- 配置读取：`config($key)`
+- 文件保存：`fileSave()`
+- 日志写入：已移除内置实现，建议使用 `monolog/monolog` 等成熟库进行日志分级与管理
+- 加解密：`encrypt`, `decrypt`
+- 数据库辅助：`dbnew($config)`、`dbexec($sql, $params=[], $db=null)`（基于 PDO）
+
+示例：创建 PDO 并执行查询：
+
+```php
+$db = dbnew(config('database.mysql.default'));
+$rows = dbexec('SELECT * FROM users WHERE id=?', [1], $db);
+```
+
+注意：这些是全局函数。未来建议将其封装为服务并通过容器注入以便测试与替换。
+
+---
+
+## 9. 日志与错误处理
+
+项目不再包含内置的 `logWrite()` 实现。建议改进：
+
+- 使用 Monolog 提供更丰富的日志后端与分级处理。
+- 在 `app/bootstrap.php` 中注册全局异常处理器，统一返回 API 格式化错误，并记录到日志。
+
+(这些为推荐改进，非必要)
+
+---
+
+## 10. 部署建议
+
+- 在生产环境使用 PHP-FPM + Nginx，静态文件由 Nginx 直接服务。
+- 在部署前确保：
+	- `composer install --no-dev --optimize-autoloader`
+	- 环境变量配置就绪（不要提交密码）
+	- 日志目录可写
+
+---
+
+## 11. 开发与测试建议
+
+- 建议添加 PHPUnit 测试与静态分析工具（PHPStan/Psalm）并加入 CI。 
+- 建议启用 `composer validate` 与 `composer audit` 检查依赖性问题。
+
+---
+
+## 12. 变更记录与兼容性
+
+参见 `CHANGELOG.md`：
+
+- 最近变更（2025-12-08）：删除 `app/library` 目录并对少数内部命名做了可兼容的调整（例如为 `RedisQueue` 添加了 `getQueues()` 并保留 `queues()`）。
+
+如果你的代码依赖历史库实现，请在仓库历史中查找或还原到相应提交。
+
+---
+
+## 需要我帮忙的后续工作（可选）
+
+- 为项目添加 `.env` 支持与示例（安全配置）
+- 集成 Monolog 并使用其 API（替换或代替旧的内置日志实现）
+- 添加基础 PHPUnit 测试与 GitHub Actions CI
+- 迁移到 PSR-4 并配置 Composer autoload
+
+你希望我现在执行哪项？
 ---
 
 ## 要求
@@ -60,9 +252,6 @@ app/
 	controller/
 		Base.php
 		Index.php
-	library/
-		RedisQueue.php
-		WebSocketClient.php
 	view/
 		index.html
 config/
@@ -77,7 +266,6 @@ public/
 - `config/`：配置文件（数据库、路由等）
 - `app/controller`：控制器（业务入口）
 - `app/view`：视图文件（简单 include/html）
-- `app/library`：框架或业务层的工具类（比如 Redis 队列、WebSocket 客户端）
 - `app/functions.php`：包含若干全局 helper 函数（http、config、dbnew 等）
 
 ---
@@ -144,7 +332,7 @@ class Index extends Base {
 - http / httpProxy / getCurl / httpMulti：基于 cURL 的 HTTP 请求工具
 - config($key)：读取 `config/*.php` 中的配置信息，参数格式如 `database.mysql.default`
 - fileSave：保存文件到指定目录（自动创建）
-- logWrite：简单的日志写入函数（可替换为 Monolog）
+- 日志：请使用 `monolog/monolog` 等成熟库进行日志分级与管理
 - encrypt / decrypt：简单的加解密封装
 - dbnew / dbexec：快速创建 PDO 连接并执行 SQL
 
@@ -160,29 +348,16 @@ $rows = dbexec('SELECT * FROM users WHERE id=?', [1], $pdo);
 
 ---
 
-## 扩展工具与第三方库（说明：`app/library` 已删除）
+## 重要说明
 
-注意：当前代码库中已移除 `app/library` 目录（若你在早期分支或历史提交中看到了 `RedisQueue`、`WebSocketClient` 等实现，现已删除）。框架仍保留核心运行时与 helpers（见 `app/functions.php`、`app/controller`、`config` 等）。若需要队列、WebSocket 或其他工具，推荐以下替代方式：
+当前代码库的核心运行时位于 `public/index.php`、`app/` 与 `config/`。早期示例中的 `app/library` 已被移除，仓库中仅保留基础运行和全局 helper（见下文）。
 
-- 使用 Composer 引入成熟库或客户端：
-	- Redis/队列：`predis/predis`、`ext-redis` + 自己封装队列逻辑，或使用更完整的队列系统（如 RabbitMQ/Beanstalkd/队列驱动）。
-	- WebSocket：若需要服务端 WebSocket，考虑 Swoole 或 Ratchet；若需要客户端，请使用现成的 WebSocket 客户端包。
-
-示例：使用 Predis 做简单队列（示意）：
-
-```php
-// composer require predis/predis
-$client = new \Predis\Client(['host'=>'127.0.0.1']);
-$client->rpush('queue:job', json_encode($payload));
-$item = $client->lpop('queue:job');
-```
-
-建议把工具封装成服务类（放在 `app/services` 或 `app/lib`），并通过简单工厂或容器注入到业务代码中，而不是放在全局 namespace 下。这样便于测试与替换。
+本 README 仅包含运行与开发所需的最小说明，避免包含历史或已删除模块的说明。
 ---
 
 ## 日志与异常
 
-- 当前使用 `logWrite()` 写入文件日志。建议引入 `monolog/monolog` 来实现分级日志、处理器（文件、stderr、远端）与格式化。
+- 项目不再提供内置 `logWrite()`。建议引入 `monolog/monolog` 来实现分级日志、处理器（文件、stderr、远端）与格式化。
 - 建议在 `public/index.php` 或 `app/bootstrap.php` 中统一捕获异常并以标准 JSON 返回（API）或渲染错误页（HTML），同时把错误记录到日志并（可选）上报到 Sentry/错误收集服务。
 
 ---
@@ -198,8 +373,8 @@ $item = $client->lpop('queue:job');
 - Q: 如何增加新的路由？
 	A: 在 `config/route.php` 中添加一条映射，确保对应 `controller` 类存在并有对应方法。
 
-- Q: 如何连接 Redis / MySQL？
-	A: 在 `config/database.php` 中配置连接信息；在运行时通过 `dbnew()` 获取 PDO，或创建 Redis 客户端并赋给 `\library\RedisQueue::$redisHandler`。
+-- Q: 如何连接 Redis / MySQL？
+	A: 在 `config/database.php` 中配置连接信息；在运行时通过 `dbnew()` 获取 PDO，或创建 Redis 客户端（例如使用 `predis/predis` 或 PHP 的 `ext-redis` 扩展）并在业务代码中直接使用或封装为服务。
 
 ---
 

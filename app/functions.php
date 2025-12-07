@@ -248,6 +248,9 @@ function fileSave($source, $destination, $name)
     return copy($source, $destination . DS . $name);
 }
 
+// 日志写入接口已移除：建议使用 Monolog 或其他成熟日志库进行分级与管理。
+
+
 
 //加密
 //OPENSSL_NO_PADDING 会影响到 PHP setcookie
