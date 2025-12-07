@@ -162,55 +162,92 @@ $rows = dbexec('SELECT * FROM users WHERE id=?', [1], $db);
 
 注意：这些是全局函数。未来建议将其封装为服务并通过容器注入以便测试与替换。
 
----
+### 使用 `dbnew()` 与 `dbexec()` 的示例（增删改查）
 
-## 9. 日志与错误处理
+`dbnew($config)` 会返回一个已配置的 PDO 实例；`dbexec($sql, $params = [], $db = null)` 在不传 `$db` 的情况下会使用默认配置（`database.mysql.default`）。
 
-项目不再包含内置的 `logWrite()` 实现。建议改进：
+- SELECT（查询）示例：
 
-- 使用 Monolog 提供更丰富的日志后端与分级处理。
-- 在 `app/bootstrap.php` 中注册全局异常处理器，统一返回 API 格式化错误，并记录到日志。
+```php
+try {
+	// 使用默认配置
+	$rows = dbexec('SELECT id, name FROM users WHERE status = ?', [1]);
+	foreach ($rows as $row) {
+		echo $row['id'] . ': ' . $row['name'] . "\n";
+	}
+} catch (\Throwable $e) {
+	// dbnew 已设置 PDO::ERRMODE_EXCEPTION，错误会抛出异常
+	error_log($e->getMessage());
+}
+```
 
-(这些为推荐改进，非必要)
+- INSERT（新增）示例：
 
----
+```php
+try {
+	$sql = 'INSERT INTO users (name, email, status) VALUES (?, ?, ?)';
+	$affected = dbexec($sql, ['Alice', 'alice@example.com', 1]);
+	// 对于非 SELECT，dbexec 返回受影响行数（rowCount）
+	echo "Inserted rows: " . $affected;
+} catch (\Throwable $e) {
+	error_log($e->getMessage());
+}
+```
 
-## 10. 部署建议
+- UPDATE（更新）示例：
 
-- 在生产环境使用 PHP-FPM + Nginx，静态文件由 Nginx 直接服务。
-- 在部署前确保：
-	- `composer install --no-dev --optimize-autoloader`
-	- 环境变量配置就绪（不要提交密码）
-	- 日志目录可写
+```php
+try {
+	$sql = 'UPDATE users SET status = ? WHERE id = ?';
+	$affected = dbexec($sql, [0, 123]);
+	echo "Updated rows: " . $affected;
+} catch (\Throwable $e) {
+	error_log($e->getMessage());
+}
+```
 
----
+- DELETE（删除）示例：
 
-## 11. 开发与测试建议
+```php
+try {
+	$sql = 'DELETE FROM users WHERE id = ?';
+	$affected = dbexec($sql, [123]);
+	echo "Deleted rows: " . $affected;
+} catch (\Throwable $e) {
+	error_log($e->getMessage());
+}
+```
 
-- 建议添加 PHPUnit 测试与静态分析工具（PHPStan/Psalm）并加入 CI。 
-- 建议启用 `composer validate` 与 `composer audit` 检查依赖性问题。
+说明：
+- `dbexec` 对于 SELECT 返回结果数组（fetchAll），对于 INSERT/UPDATE/DELETE 返回受影响的行数。
+- 当你需要多次复用连接或在事务中执行多个语句时，可先用 `dbnew(config('database.mysql.default'))` 获取 PDO 实例并把它传给 `dbexec(..., $db)`，或在 PDO 上手动管理事务。
 
----
+### 查询单行或单字段的常见用法
 
-## 12. 变更记录与兼容性
+要从 `dbexec` 的返回结果中取得单行或单字段，常见做法是对 SQL 加上 `LIMIT 1`，然后检查结果数组的第一项：
 
-参见 `CHANGELOG.md`：
+- 查询单行（返回一条记录）：
 
-- 最近变更（2025-12-08）：删除 `app/library` 目录并对少数内部命名做了可兼容的调整（例如为 `RedisQueue` 添加了 `getQueues()` 并保留 `queues()`）。
+```php
+$rows = dbexec('SELECT id, name, email FROM users WHERE id = ? LIMIT 1', [123]);
+$row = $rows[0] ?? null;
+if ($row) {
+	// 使用 $row['field'] 访问字段
+	echo $row['name'];
+} else {
+	// 未找到记录
+}
+```
 
-如果你的代码依赖历史库实现，请在仓库历史中查找或还原到相应提交。
+- 查询单字段（只需要一个值，例如某条记录的某个列）：
 
----
+```php
+$rows = dbexec('SELECT email FROM users WHERE id = ? LIMIT 1', [123]);
+$email = $rows[0]['email'] ?? null;
+echo $email;
+```
 
-## 需要我帮忙的后续工作（可选）
 
-- 为项目添加 `.env` 支持与示例（安全配置）
-- 集成 Monolog 并使用其 API（替换或代替旧的内置日志实现）
-- 添加基础 PHPUnit 测试与 GitHub Actions CI
-- 迁移到 PSR-4 并配置 Composer autoload
-
-你希望我现在执行哪项？
----
 
 ## 要求
 - PHP >= 7.1（项目当前声明为 >=7.1，建议至少使用 7.4 或更高以获得更好语言特性与性能）
@@ -353,21 +390,6 @@ $rows = dbexec('SELECT * FROM users WHERE id=?', [1], $pdo);
 当前代码库的核心运行时位于 `public/index.php`、`app/` 与 `config/`。早期示例中的 `app/library` 已被移除，仓库中仅保留基础运行和全局 helper（见下文）。
 
 本 README 仅包含运行与开发所需的最小说明，避免包含历史或已删除模块的说明。
----
-
-## 日志与异常
-
-- 项目不再提供内置 `logWrite()`。建议引入 `monolog/monolog` 来实现分级日志、处理器（文件、stderr、远端）与格式化。
-- 建议在 `public/index.php` 或 `app/bootstrap.php` 中统一捕获异常并以标准 JSON 返回（API）或渲染错误页（HTML），同时把错误记录到日志并（可选）上报到 Sentry/错误收集服务。
-
----
-
-## 运行测试 / 静态检查（建议）
-
-- 建议添加 `phpunit` 测试套件以及 `phpstan` 或 `psalm` 进行静态分析。测试与静态分析应当纳入 CI（例如 GitHub Actions）。
-
----
-
 ## 常见问题（FAQ）
 
 - Q: 如何增加新的路由？
