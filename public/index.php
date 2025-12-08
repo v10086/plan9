@@ -21,11 +21,8 @@ define("API", explode('?', $_SERVER['REQUEST_URI'])[0]); //API路径
 require  APP_PATH . DS . "bootstrap.php";
 //自动加载类库
 spl_autoload_register(function ($class) {
-    $path = APP_PATH;
-    foreach (explode('\\', $class) as $key => $value) {
-        $path = $path . DS . $value;
-    }
-    include $path . '.php';
+    $path = APP_PATH . DS . str_replace('\\', DS, $class) . '.php';
+    include $path;
 });
 try {
     if (in_array(($_SERVER['REQUEST_METHOD'] ?? ""), ['POST', 'PUT']) && isset($_SERVER['CONTENT_TYPE'])) {
