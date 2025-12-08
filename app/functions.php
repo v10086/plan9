@@ -295,3 +295,187 @@ function dbnew($config)
     $db->setAttribute(\PDO::ATTR_EMULATE_PREPARES, FALSE); //数据库使用真正的预编译  
     return $db;
 }
+
+
+/**
+ * asyncMysqliBatch
+ *
+ * 使用多个 mysqli 连接并发执行多条 SQL（基于 mysqli 的异步查询 MYSQLI_ASYNC）。
+ * 注意：单个 mysqli 连接上只能同时保有一个未完成的异步查询，因此需要为并发的 SQL 创建多个连接。
+ *
+ * 参数说明：
+ *  - $dbConfig: 数组，数据库连接配置，至少包含 host,user,password,database，可选 port,charset
+ *  - $sqls: 数组，key => sql 的形式（可以是关联数组），返回结果会按相同 key 返回
+ *  - $concurrency: 并发连接数上限，默认等于 SQL 数量
+ *  - $pollTimeout: poll 的超时时间（秒，可带小数），当轮询无响应时会以该时间为单次等待
+ *
+ * 返回：按输入 $sqls 的键返回结果数组，每个值为：
+ *  [
+ *    'success' => true|false,
+ *    'type' => 'select'|'modify'|'unknown',
+ *    'data' => array|null, // select 的 fetch_all 或 modify 的受影响行数
+ *    'error' => string|null
+ *  ]
+ */
+function asyncMysqliBatch(array $dbConfig, array $sqls, int $concurrency = null, float $pollTimeout = 1.0)
+{
+    if (count($sqls) === 0) {
+        return [];
+    }
+
+    $keys = array_keys($sqls);
+    $total = count($keys);
+    $concurrency = $concurrency ?: $total;
+    $workers = min($concurrency, $total);
+
+    // 建立 worker 连接
+    $conns = [];
+    for ($i = 0; $i < $workers; $i++) {
+        $mysqli = new mysqli(
+            $dbConfig['host'] ?? '127.0.0.1',
+            $dbConfig['user'] ?? 'root',
+            $dbConfig['password'] ?? '',
+            $dbConfig['database'] ?? '',
+            $dbConfig['port'] ?? 3306
+        );
+        if ($mysqli->connect_errno) {
+            // 关闭已打开的连接
+            foreach ($conns as $c) {
+                @$c->close();
+            }
+            throw new \RuntimeException('Connect error: ' . $mysqli->connect_error);
+        }
+        $mysqli->set_charset($dbConfig['charset'] ?? 'utf8mb4');
+        $conns[] = $mysqli;
+    }
+
+    // 准备队列（保留原始键）
+    $queue = [];
+    foreach ($sqls as $k => $sql) {
+        $queue[] = ['key' => $k, 'sql' => $sql];
+    }
+
+    $results = [];
+    foreach ($keys as $k) {
+        $results[$k] = null;
+    }
+
+    $assigned = []; // connIndex => ['key'=>..., 'sql'=>...]
+
+    // 初次分配
+    for ($i = 0; $i < $workers; $i++) {
+        if (count($queue) === 0) break;
+        $job = array_shift($queue);
+        $conns[$i]->query($job['sql'], MYSQLI_ASYNC);
+        $assigned[$i] = $job;
+    }
+
+    // poll 循环
+    $micro = (int)(($pollTimeout - floor($pollTimeout)) * 1000000);
+    $sec = (int)floor($pollTimeout);
+
+    while (count($assigned) > 0) {
+        $read = $error = $reject = [];
+        foreach (array_keys($assigned) as $ci) {
+            $read[] = $conns[$ci];
+        }
+
+        $n = mysqli_poll($read, $error, $reject, $sec, $micro);
+
+        if ($n === false) {
+            // poll 失败，记录错误并退出
+            foreach ($assigned as $ci => $job) {
+                $results[$job['key']] = [
+                    'success' => false,
+                    'type' => 'unknown',
+                    'data' => null,
+                    'error' => 'poll failed'
+                ];
+            }
+            break;
+        }
+
+        if ($n === 0) {
+            // 超时一次：继续循环或认定为超时错误
+            // 为了避免无限循环，当没有任何响应且队列为空时，认定为超时错误
+            // 这里选择将仍在等待的任务标记为超时并退出
+            foreach ($assigned as $ci => $job) {
+                $results[$job['key']] = [
+                    'success' => false,
+                    'type' => 'unknown',
+                    'data' => null,
+                    'error' => 'timeout'
+                ];
+            }
+            break;
+        }
+
+        // 处理有响应的连接
+        foreach ($read as $r) {
+            // 找到对应的 connection index
+            $ci = null;
+            foreach ($assigned as $idx => $job) {
+                if ($conns[$idx] === $r) {
+                    $ci = $idx;
+                    break;
+                }
+            }
+            if ($ci === null) continue;
+
+            $job = $assigned[$ci];
+
+            // 取回结果
+            $res = $r->reap_async_query();
+            if ($res === false) {
+                $results[$job['key']] = [
+                    'success' => false,
+                    'type' => 'unknown',
+                    'data' => null,
+                    'error' => $r->error
+                ];
+            } else {
+                if ($res instanceof mysqli_result) {
+                    $data = $res->fetch_all(MYSQLI_ASSOC);
+                    $res->free();
+                    $results[$job['key']] = [
+                        'success' => true,
+                        'type' => 'select',
+                        'data' => $data,
+                        'error' => null
+                    ];
+                } elseif ($res === true) {
+                    // 非 SELECT 语句（insert/update/delete）
+                    $results[$job['key']] = [
+                        'success' => true,
+                        'type' => 'modify',
+                        'data' => $r->affected_rows,
+                        'error' => null
+                    ];
+                } else {
+                    $results[$job['key']] = [
+                        'success' => false,
+                        'type' => 'unknown',
+                        'data' => null,
+                        'error' => 'unknown result type'
+                    ];
+                }
+            }
+
+            // 当前连接如果还有队列任务，则继续发起下一条异步查询；否则取消分配
+            if (count($queue) > 0) {
+                $next = array_shift($queue);
+                $r->query($next['sql'], MYSQLI_ASYNC);
+                $assigned[$ci] = $next;
+            } else {
+                unset($assigned[$ci]);
+            }
+        }
+    }
+
+    // 关闭连接
+    foreach ($conns as $c) {
+        @$c->close();
+    }
+
+    return $results;
+}

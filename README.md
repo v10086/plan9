@@ -264,6 +264,57 @@ echo $email;
 
 ---
 
+## asyncMysqliBatch（并发异步 MySQL 查询）
+
+框架在 `app/functions.php` 中提供了 `asyncMysqliBatch` 辅助函数，用于在短时间内并发执行多条 SQL（基于 mysqli 的异步查询 MYSQLI_ASYNC）。适合在需要并行执行多个独立查询并等待结果的场景（例如同时调用多个慢查询或测试并发行为）。
+
+函数签名：
+
+```php
+function asyncMysqliBatch(array $dbConfig, array $sqls, int $concurrency = null, float $pollTimeout = 1.0)
+```
+
+参数说明：
+- `$dbConfig`：数据库连接配置数组，至少包括 `host`、`user`、`password`、`database`，可选 `port`、`charset`。
+- `$sqls`：关联数组，`key => sql`，返回结果会按相同的 key 组织。
+- `$concurrency`：并发连接数上限（默认等于 SQL 数量）。
+- `$pollTimeout`：轮询等待时间（单位：秒，支持小数），用于 `mysqli_poll` 的超时参数，需大于单条查询的最长预期耗时以避免误判超时。
+
+返回值：按输入 `$sqls` 的键返回结果数组，每个子项包含：
+
+```php
+[
+	'success' => true|false,
+	'type' => 'select'|'modify'|'unknown',
+	'data' => array|null, // select 返回 fetch_all 结果，modify 返回受影响行数
+	'error' => string|null
+]
+```
+
+示例（控制器中调用）：
+
+```php
+$dbCfg = [
+	'host'=>'127.0.0.1', 'user'=>'root', 'password'=>'pwd', 'database'=>'test', 'port'=>3306
+];
+$sqls = [
+	'a' => 'SELECT SLEEP(1) AS slept',
+	'b' => 'SELECT SLEEP(2) AS slept',
+	'c' => 'SELECT SLEEP(3) AS slept',
+];
+$res = asyncMysqliBatch($dbCfg, $sqls, 3, 5.0);
+var_dump($res);
+```
+
+重要注意事项：
+
+- 需要在 PHP 中启用 `mysqli` 扩展（`php -m` 可检查）。
+- 单个 mysqli 连接上只能同时存在一个未完成的异步查询，因此实现会为并发创建多个连接，注意数据库最大连接与线程数量的限制；不要把过多并发设置得过大以免耗尽数据库资源。
+- `pollTimeout` 应至少大于最慢查询的预计耗时，否则任务会被标记为超时。
+- 异步查询会占用 MySQL 的线程资源（例如 `SELECT SLEEP()` 也是占用线程的），请在生产场景谨慎使用。
+- 该函数在 `app/functions.php` 中实现，若需要复用连接或在事务中使用，应修改为接受已有的 mysqli 对象数组或改用同步连接池设计。
+
+
 
 
 
