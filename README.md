@@ -29,8 +29,8 @@ Plan9 是一个极简的 PHP Web 框架。它的设计目标是低学习成本�
 注意：此前仓库中存在 `app/library`，用于一些工具类（例如 RedisQueue、WebSocketClient），但在当前分支这些已被删除。请查看 `CHANGELOG.md` 获取历史变更记录。
 
 ## plan9框架跟yaf和Slim等一样，并没有使用orm,原因在这链接中可以查看：
-https://www.doubao.com/doc/TcoYfB3yGd0IJyciw2jciSp7nBh?enter_from=public_link# 
--【豆包 AI 文档】ORM 与直接写 SQL 核心讨论归档
+-  https://www.doubao.com/doc/TcoYfB3yGd0IJyciw2jciSp7nBh?enter_from=public_link# 
+- 【豆包 AI 文档】ORM 与直接写 SQL 核心讨论归档
 
 ## 核心设计带来的性能优势
 
