@@ -32,6 +32,10 @@ Plan9 是一个极简的 PHP Web 框架。它的设计目标是低学习成本�
 -  https://www.doubao.com/doc/TcoYfB3yGd0IJyciw2jciSp7nBh?enter_from=public_link# 
 - 【豆包 AI 文档】ORM 与直接写 SQL 核心讨论归档
 
+## plan9 + GatewayWorker 与 Hyperf 技术选型讨论总结归档
+- https://www.doubao.com/doc/PbBLfm7xBdVc5JcLyvWcYPHynLc?enter_from=public_link# 
+- 【豆包 AI 文档】Plan9 + GatewayWorker 与 Hyperf 技术选型讨论总结归档
+
 ## 核心设计带来的性能优势
 
 - 极简启动与低初始化开销：单文件入口（`public/index.php`）和少量引导逻辑减少每次请求需要 include/解析的文件数，冷启动更快。
