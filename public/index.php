@@ -8,16 +8,15 @@ define('APP_NAME',      'app');
 
 define("APP_PATH", ROOT_PATH . DS . APP_NAME); //应用路径
 
-define("LIB_PATH", ROOT_PATH . DS . APP_NAME . DS . 'library'); //库路径
-
-define("VIEW_PATH", ROOT_PATH . DS . APP_NAME . DS . 'view'); //视图库
-
 define("CONF_PATH", ROOT_PATH . DS . 'config'); //配置文件路径
+
+define("FUNS_PATH", ROOT_PATH . DS . APP_NAME . DS .  'functions'); //函数库路径
 
 define("VENDOR_PATH", ROOT_PATH . DS . 'vendor'); //第三方拓展路径
 
 define("API", explode('?', $_SERVER['REQUEST_URI'])[0]); //API路径
 
+require  FUNS_PATH . DS . "core.php"; 
 require  APP_PATH . DS . "bootstrap.php";
 //自动加载类库
 spl_autoload_register(function ($class) {

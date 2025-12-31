@@ -7,8 +7,7 @@ class Index extends \controller\Base
 
     public function index()
     {
-        $abc = '首页';
-        include(VIEW_PATH . '/index.html');
+        return '首页';
     }
 
     public function test()
@@ -30,7 +29,7 @@ class Index extends \controller\Base
     public function testAsyncMysqli()
     {
     // 引入工具函数（包含 asyncMysqliBatch）
-        $file = APP_PATH . '/functions.php';
+        $file = FUNS_PATH . '/helper.php';
         if (is_file($file)) {
             include_once $file;
         }

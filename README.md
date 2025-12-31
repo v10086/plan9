@@ -38,7 +38,7 @@ Plan9 是一个极简的 PHP Web 框架。它的设计目标是低学习成本�
 - 单文件入口（`public/index.php`）负责路由匹配与响应输出。
 - 配置以 PHP 文件形式放在 `config/`。
 - 控制器采用类/方法映射，放在 `app/controller/`。
-- 提供若干全局 helper（`app/functions.php`）以便快速开发。
+- 提供若干全局 helper（`app/functions`）目录以便快速开发。
 
 注意：此前仓库中存在 `app/library`，用于一些工具类（例如 RedisQueue、WebSocketClient），但在当前分支这些已被删除。请查看 `CHANGELOG.md` 获取历史变更记录。
 
@@ -99,7 +99,6 @@ php -S localhost:8080 -t public
 - `app/bootstrap.php`：框架初始化（常量定义、autoload 引导、bootstrap 注释位置）
 - `app/functions.php`：全局 helper（HTTP 工具、config 读取、日志、DB 快速创建等）
 - `app/controller/`：控制器目录（示例：`Index.php`）
-- `app/view/`：视图文件（HTML/PHP）
 - `config/`：配置目录（`database.php`、`route.php` 等）
 - `README.md`, `CHANGELOG.md`：项目说明与变更记录
 
@@ -156,7 +155,7 @@ namespace controller;
 
 class Index extends Base {
 	public function index() {
-		include(VIEW_PATH . '/index.html');
+		return '首页';
 	}
 	public function test() {
 		return ['code'=>1, 'msg'=>'ok'];
@@ -167,12 +166,11 @@ class Index extends Base {
 ---
 
 ## 7. 视图
-
-视图放在 `app/view`，当前框架使用直接 `include` 渲染静态 HTML。为防止 XSS，建议在渲染前对用户数据做转义，或迁移到模板引擎（例如 Twig）以自动转义。
+无内置视图，建议前后端分离
 
 ---
 
-## 8. 常用 helper（`app/functions.php`）
+## 8. 常用 helper（`app/functions`）
 
 该文件包含：
 
