@@ -22,13 +22,14 @@ $users = dbexec("SELECT * FROM users WHERE id = ?", [1]);
 dbexec("INSERT INTO logs (content) VALUES (?)", ['login']);
 $logId = dbexec('dbLastId');
 
+```
+
 ## Plan9 — 使用文档
 
 这份文档基于当前仓库代码（2025-12-08），覆盖：项目概览、安装、目录结构、配置与运行、路由/控制器/视图、常用 helper、部署建议、开发规范与变更说明。
 
 如果你需要把文档进一步拆分为开发者手册或 API 文档，我可以继续扩展。
 
----
 
 ## 1. 项目概览
 
