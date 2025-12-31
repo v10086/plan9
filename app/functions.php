@@ -267,24 +267,51 @@ function decrypt($data, $key)
 }
 
 
-//以默认配置创建新的数据库C端实例 并执行sql
+//数据库操作句柄
 function dbexec($sql, $params = [], $db = null)
 {
-    if ($db == null) {
-        $db = dbnew(config('database.mysql.default'));
+    static $defaultDb = null;
+
+    // --- 新增：强制关闭功能 ---
+    // 如果传入特定的指令（例如字符串 'defaultDbClose'），则清空连接并返回
+    if ($sql === 'defaultDbClose') {
+        $defaultDb = null; // PDO 对象设为 null 会自动断开 TCP 连接
+        return true;
     }
-    $sth = @$db->prepare($sql);
-    $sth->execute($params);
+
+    if ($db == null) {
+        if ($defaultDb === null) {
+            $defaultDb = dbnew(config('database.mysql.default'));
+        }
+        $db = $defaultDb;
+    }
+
+    try {
+        $sth = $db->prepare($sql);
+        $sth->execute($params);
+    } catch (\PDOException $e) {
+        // 连接断开重连逻辑 (错误码 2006/2013)
+        if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
+            $defaultDb = dbnew(config('database.mysql.default'));
+            $db = $defaultDb;
+            $sth = $db->prepare($sql);
+            $sth->execute($params);
+        } else {
+            throw $e;
+        }
+    }
+
+    // 处理结果
     if (strtoupper(substr(trim($sql), 0, 6)) == 'SELECT') {
         $resp = $sth->fetchAll();
     } else {
         $resp = $sth->rowCount();
     }
-    //资源释放
-    $sth = null;
-    $db = null;
+    
+    $sth = null; 
     return $resp;
 }
+
 
 //创建数据库实例
 function dbnew($config)
