@@ -10,7 +10,7 @@ define("APP_PATH", ROOT_PATH . DS . APP_NAME); //应用路径
 
 define("CONF_PATH", ROOT_PATH . DS . 'config'); //配置文件路径
 
-define("FUNS_PATH", ROOT_PATH . DS .  'functions'); //函数库路径
+define("FUNS_PATH", ROOT_PATH . DS .  'function'); //函数库路径
 
 define("VENDOR_PATH", ROOT_PATH . DS . 'vendor'); //第三方拓展路径
 
