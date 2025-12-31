@@ -279,10 +279,12 @@ function dbexec($sql, $params = [], $db = null)
         return true;
     }
 
+    $defaultDbRetry=false;//是否断开重连
     if ($db == null) {
         if ($defaultDb === null) {
             $defaultDb = dbnew(config('database.mysql.default'));
         }
+        $defaultDbRetry=true;//使用默认数据库配置时，开启断开重连功能
         $db = $defaultDb;
     }
 
@@ -291,7 +293,7 @@ function dbexec($sql, $params = [], $db = null)
         $sth->execute($params);
     } catch (\PDOException $e) {
         // 连接断开重连逻辑 (错误码 2006/2013)
-        if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
+        if (($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) && $defaultDbRetry) {
             $defaultDb = dbnew(config('database.mysql.default'));
             $db = $defaultDb;
             $sth = $db->prepare($sql);
