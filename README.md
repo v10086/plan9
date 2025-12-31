@@ -1,13 +1,26 @@
 📃 开源协议
 Apache License Version 2.0 see http://www.apache.org/licenses/LICENSE-2.0.html
 
-# 一款简约 高效 可靠 的PHP web框架  
-# 5分钟入门 10分钟精通
 
+# Plan9 - 简约、高效、可靠的 PHP 极简框架 5分钟入门 10分钟精通
+# 需要引入第三方类库的话直接composer 安装引入即可 
 
-已用于视频cms、调研系统、金融支付、物联网等类型项目  
+Plan9 是一款设计极简 PHP 框架。它摒弃了繁重的 IOC 容器和 ORM，通过原生 SQL 与高效的连接管理，将 Web 响应耗时压低到毫秒级。
 
-需要引入第三方类库的话直接composer 安装引入即可  
+## 🌟 核心卖点
+- **极速响应**：无容器初始化，QPS 是传统框架的 5-10 倍。
+- **数据库自愈**：内置断开自动重连机制，无惧 `MySQL gone away`。
+- **长连接友好**：支持静态连接复用与手动强制关闭（`dbexec('defaultDbClose')`）。
+- **类型安全**：强制关闭模拟预编译，返回数据保持数据库原始类型。
+
+## 🚀 快速上手
+```php
+// 执行查询
+$users = dbexec("SELECT * FROM users WHERE id = ?", [1]);
+
+// 插入并获取ID
+dbexec("INSERT INTO logs (content) VALUES (?)", ['login']);
+$logId = dbexec('dbLastId');
 
 ## Plan9 — 使用文档
 
