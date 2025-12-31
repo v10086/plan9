@@ -20,7 +20,7 @@ $users = dbexec("SELECT * FROM users WHERE id = ?", [1]);
 
 // 插入并获取ID
 dbexec("INSERT INTO logs (content) VALUES (?)", ['login']);
-$logId = dbexec('dbLastId');
+$logId = dbexec('lastInsertId');
 
 ```
 
