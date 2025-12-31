@@ -97,7 +97,7 @@ php -S localhost:8080 -t public
 
 - `public/`：Web 入口（`public/index.php`）
 - `app/bootstrap.php`：框架初始化（常量定义、autoload 引导、bootstrap 注释位置）
-- `app/functions.php`：全局 helper（HTTP 工具、config 读取、日志、DB 快速创建等）
+- `functions/`：全局 helper（HTTP 工具、config 读取、日志、DB 快速创建等）
 - `app/controller/`：控制器目录（示例：`Index.php`）
 - `config/`：配置目录（`database.php`、`route.php` 等）
 - `README.md`, `CHANGELOG.md`：项目说明与变更记录
@@ -170,7 +170,7 @@ class Index extends Base {
 
 ---
 
-## 8. 常用 helper（`app/functions`）
+## 8. 常用 helper（`functions`目录）
 
 该文件包含：
 
