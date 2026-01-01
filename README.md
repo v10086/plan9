@@ -1,374 +1,402 @@
-📃 开源协议
-Apache License Version 2.0 see http://www.apache.org/licenses/LICENSE-2.0.html
+# Plan9 - 极简、高性能 PHP 框架
 
+![Plan9 Logo](https://via.placeholder.com/150x50?text=Plan9)
 
-# Plan9 - 简约、高效、可靠的 PHP 极简框架 5分钟入门 10分钟精通
-# 需要引入第三方类库的话直接composer 安装引入即可 
+> 🚀 5分钟入门，10分钟精通，QPS 是传统框架的 5-10 倍
 
-Plan9 是一款设计极简 PHP 框架。它摒弃了繁重的 IOC 容器和 ORM，通过原生 SQL 与高效的连接管理，将 Web 响应耗时压低到毫秒级。
+## 📖 项目简介
 
-## 🌟 核心卖点
-- **极速响应**：无容器初始化，QPS 是传统框架的 5-10 倍。
-- **数据库自愈**：内置断开自动重连机制，无惧 `MySQL gone away`。
-- **长连接友好**：支持静态连接复用与手动强制关闭（`dbexec('defaultDbClose')`）。
-- **类型安全**：强制关闭模拟预编译，返回数据保持数据库原始类型。
+Plan9 是一款设计极简的 PHP Web 框架，专注于极致性能与开发效率。它摒弃了繁重的 IOC 容器和 ORM，通过原生 SQL 与高效的连接管理，将 Web 响应耗时压低到毫秒级。
 
-## 🚀 快速上手
-```php
-// 执行查询
-$users = dbexec("SELECT * FROM users WHERE id = ?", [1]);
+## 💡 设计理念
 
-// 插入并获取ID
-dbexec("INSERT INTO logs (content) VALUES (?)", ['login']);
-$logId = dbexec('lastInsertId');
+### 为什么不使用 ORM？
+Plan9 选择直接使用 SQL 而不集成 ORM，主要基于以下考虑：
+- **性能优势**：原生 SQL 避免了 ORM 带来的额外开销和性能损耗
+- **灵活性**：直接编写 SQL 可以更精确地控制查询逻辑和性能优化
+- **学习成本**：减少了学习特定 ORM 框架的成本，开发者可以专注于 SQL 和业务逻辑
+- **可维护性**：SQL 语句更加直观，便于调试和维护
 
-```
+### 技术选型考量
+在 Plan9 + GatewayWorker 与 Hyperf 的技术选型对比中，Plan9 展现出以下优势：
+- **轻量级**：适合快速开发和部署小型服务
+- **低资源占用**：在资源受限环境下表现更优
+- **易于集成**：可以轻松与 GatewayWorker 等工具结合
+- **高性能**：在高并发场景下具有显著的性能优势
 
-## Plan9 — 使用文档
+详细讨论可参考豆包 AI 文档：
+- [ORM 与直接写 SQL 核心讨论归档](https://www.doubao.com/doc/TcoYfB3yGd0IJyciw2jciSp7nBh?enter_from=public_link#)
+- [Plan9 + GatewayWorker 与 Hyperf 技术选型讨论总结归档](https://www.doubao.com/doc/PbBLfm7xBdVc5JcLyvWcYPHynLc?enter_from=public_link#)
 
-这份文档基于当前仓库代码（2025-12-08），覆盖：项目概览、安装、目录结构、配置与运行、路由/控制器/视图、常用 helper、部署建议、开发规范与变更说明。
+## ✨ 核心特性
 
-如果你需要把文档进一步拆分为开发者手册或 API 文档，我可以继续扩展。
+### 性能极致
+- **极速响应**：无容器初始化，启动开销极低
+- **高效路由**：静态路由映射，避免复杂正则匹配
+- **轻量级设计**：核心代码仅几百行，几乎零额外开销
+- **资源友好**：低内存占用，高并发处理能力
 
+### 开发友好
+- **极简 API**：直观的函数式调用风格
+- **原生 SQL**：直接操作数据库，性能可控
+- **自动重连**：内置数据库断开自动重连机制
+- **类型安全**：强制关闭模拟预编译，保持数据原始类型
 
-## 1. 项目概览
+### 稳定可靠
+- **长连接支持**：静态连接复用与手动关闭
+- **异常处理**：完整的错误捕获与日志记录
+- **灵活扩展**：支持 Composer 引入第三方库
 
-Plan9 是一个极简的 PHP Web 框架。它的设计目标是低学习成本、易于嵌入到小型服务或内部工具中。核心特点：
+## 🚀 快速开始
 
-- 单文件入口（`public/index.php`）负责路由匹配与响应输出。
-- 配置以 PHP 文件形式放在 `config/`。
-- 控制器采用类/方法映射，放在 `app/controller/`。
-- 提供若干全局 helper（`app/functions`）目录以便快速开发。
-
-注意：此前仓库中存在 `app/library`，用于一些工具类（例如 RedisQueue、WebSocketClient），但在当前分支这些已被删除。请查看 `CHANGELOG.md` 获取历史变更记录。
-
-## plan9框架跟yaf和Slim等一样，并没有使用orm,原因在这链接中可以查看：
--  https://www.doubao.com/doc/TcoYfB3yGd0IJyciw2jciSp7nBh?enter_from=public_link# 
-- 【豆包 AI 文档】ORM 与直接写 SQL 核心讨论归档
-
-## plan9 + GatewayWorker 与 Hyperf 技术选型讨论总结归档
-- https://www.doubao.com/doc/PbBLfm7xBdVc5JcLyvWcYPHynLc?enter_from=public_link# 
-- 【豆包 AI 文档】Plan9 + GatewayWorker 与 Hyperf 技术选型讨论总结归档
-
-## 核心设计带来的性能优势
-
-- 极简启动与低初始化开销：单文件入口（`public/index.php`）和少量引导逻辑减少每次请求需要 include/解析的文件数，冷启动更快。
-- 简单高效的路由分发：当前使用静态路由映射（数组查找）进行分发，避免复杂正则或深层中间件链，查找成本非常低。
-- 更少的运行时对象与依赖：默认不注入大量服务或使用反射/大量对象实例化，降低内存分配和垃圾回收压力，提升吞吐。
-- 直接渲染视图：默认通过 `include` 渲染视图文件，减少模板解析/编译开销（如需要模板引擎，可按需引入并启用缓存）。
-- 贴近底层的 I/O 与数据库处理：使用 PDO 并合理配置（例如关闭 emulate prepares、开启异常模式）可减少抽象层带来的额外开销。
-
-这些设计在常见的 CRUD/API 场景下能带来更低的响应延迟和更高的 requests/sec，尤其在高并发、短请求生命周期的场景中优势明显。
-
----
-
-## 2. 环境要求
-
-- PHP >= 7.1（建议 >= 7.4）
+### 环境要求
+- PHP >= 7.1（建议 PHP >= 7.4）
 - Composer
 
-可选（按需）：MySQL、Redis 等服务
+### 安装
 
----
-
-## 3. 安装与快速运行
-
-克隆并安装依赖：
-
-```powershell
-git clone <repo-url> plan9
+```bash
+git clone <仓库地址> plan9
 cd plan9
 composer install
 ```
 
-本地开发（使用 PHP 内置服务器）：
+### 启动开发服务器
 
-```powershell
+```bash
 php -S localhost:8080 -t public
 ```
 
-打开浏览器并访问 `http://localhost:8080/`。
+访问 `http://localhost:8080/` 即可看到示例页面
 
----
+## 📁 目录结构
 
-## 4. 目录结构（说明）
+```
+plan9/
+├── app/
+│   ├── bootstrap.php      # 框架初始化
+│   └── controller/        # 控制器目录
+├── config/               # 配置文件
+│   ├── database.php      # 数据库配置
+│   └── route.php         # 路由配置
+├── function/             # 全局工具函数
+│   ├── core.php          # 核心功能
+│   ├── db.php            # 数据库操作
+│   └── helper.php        # 辅助函数
+├── public/               # Web 入口
+│   └── index.php         # 单文件入口
+├── composer.json         # Composer 配置
+├── CHANGELOG.md          # 变更记录
+└── README.md             # 项目文档
+```
 
-主要文件/目录：
+## 🎯 核心功能
 
-- `public/`：Web 入口（`public/index.php`）
-- `app/bootstrap.php`：框架初始化（常量定义、autoload 引导、bootstrap 注释位置）
-- `functions/`：全局 helper（HTTP 工具、config 读取、日志、DB 快速创建等）
-- `app/controller/`：控制器目录（示例：`Index.php`）
-- `config/`：配置目录（`database.php`、`route.php` 等）
-- `README.md`, `CHANGELOG.md`：项目说明与变更记录
+### 1. 路由与控制器
 
-
----
-
-## 5. 配置
-
-配置以 PHP 数组的形式放在 `config/` 下。示例：`config/database.php`：
+#### 定义路由
+在 `config/route.php` 中配置路由：
 
 ```php
 return [
-	'mysql' => [
-		'default' => [
-			'dsn' => 'mysql:host=127.0.0.1;dbname=yourdb;charset=utf8mb4',
-			'user' => 'root',
-			'password' => ''
-		],
-	],
-	'redis' => [ /* ... */ ]
+    '/' => 'controller/Index@index',        // 首页
+    '/api/users' => 'controller/User@list', // 用户列表接口
 ];
 ```
 
-```php
-$val = config('database.mysql.default');
-```
-
-注意：不要在仓库中直接提交敏感凭据，建议采用环境变量（`.env`）并在 `app/bootstrap.php` 中读取。
-
----
-
-## 6. 路由与控制器
-
-路由定义在 `config/route.php`，格式为 `path => 'controller/Name@method'`。
-
-示例：
+#### 创建控制器
+在 `app/controller/` 目录下创建控制器：
 
 ```php
-return [
-	'/' => 'controller/Index@index',
-	'/test' => 'controller/Index@test',
-];
-```
-
-在 `public/index.php` 中，框架根据请求 URI 查找路由，实例化对应类并调用方法：
-
-- 控制器类位于 `app/controller`，命名空间为 `controller`。
-- 控制器方法可以返回数组（将被编码为 JSON）或字符串（作为 HTML 输出）。
-
-示例控制器：`app/controller/Index.php`
-
-```php
+// app/controller/Index.php
 namespace controller;
 
-class Index extends Base {
-	public function index() {
-		return '首页';
-	}
-	public function test() {
-		return ['code'=>1, 'msg'=>'ok'];
-	}
+class Index {
+    public function index() {
+        return '欢迎使用 Plan9 框架！';
+    }
 }
 ```
 
----
-
-## 7. 视图
-无内置视图，建议前后端分离
-
----
-
-## 8. 常用 helper（`functions`目录）
-
-该文件包含：
-
-- HTTP 客户端工具：`http`, `httpProxy`, `getCurl`, `httpMulti`
-- 配置读取：`config($key)`
-- 文件保存：`fileSave()`
-- 日志写入：已移除内置实现，建议使用 `monolog/monolog` 等成熟库进行日志分级与管理
-- 加解密：`encrypt`, `decrypt`
-- 数据库辅助：`dbnew($config)`、`dbexec($sql, $params=[], $db=null)`（基于 PDO）
-
-示例：创建 PDO 并执行查询：
+#### 响应类型
+- 返回字符串：直接输出 HTML
+- 返回数组：自动转换为 JSON
 
 ```php
-$db = dbnew(config('database.mysql.default'));
-$rows = dbexec('SELECT * FROM users WHERE id=?', [1], $db);
-```
+// 返回 HTML
+public function html() {
+    return '<h1>Hello Plan9</h1>';
+}
 
-注意：这些是全局函数。未来建议将其封装为服务并通过容器注入以便测试与替换。
-
-### 使用 `dbnew()` 与 `dbexec()` 的示例（增删改查）
-
-`dbnew($config)` 会返回一个已配置的 PDO 实例；`dbexec($sql, $params = [], $db = null)` 在不传 `$db` 的情况下会使用默认配置（`database.mysql.default`）。
-
-- SELECT（查询）示例：
-
-```php
-try {
-	// 使用默认配置
-	$rows = dbexec('SELECT id, name FROM users WHERE status = ?', [1]);
-	foreach ($rows as $row) {
-		echo $row['id'] . ': ' . $row['name'] . "\n";
-	}
-} catch (\Throwable $e) {
-	// dbnew 已设置 PDO::ERRMODE_EXCEPTION，错误会抛出异常
-	error_log($e->getMessage());
+// 返回 JSON
+public function json() {
+    return [
+        'code' => 200,
+        'message' => 'success',
+        'data' => ['name' => 'Plan9']
+    ];
 }
 ```
 
-- INSERT（新增）示例：
+### 2. 数据库操作
+
+#### 配置数据库
+在 `config/database.php` 中配置数据库连接：
 
 ```php
-try {
-	$sql = 'INSERT INTO users (name, email, status) VALUES (?, ?, ?)';
-	$affected = dbexec($sql, ['Alice', 'alice@example.com', 1]);
-	// 对于非 SELECT，dbexec 返回受影响行数（rowCount）
-	echo "Inserted rows: " . $affected;
-} catch (\Throwable $e) {
-	error_log($e->getMessage());
-}
-```
-
-- UPDATE（更新）示例：
-
-```php
-try {
-	$sql = 'UPDATE users SET status = ? WHERE id = ?';
-	$affected = dbexec($sql, [0, 123]);
-	echo "Updated rows: " . $affected;
-} catch (\Throwable $e) {
-	error_log($e->getMessage());
-}
-```
-
-- DELETE（删除）示例：
-
-```php
-try {
-	$sql = 'DELETE FROM users WHERE id = ?';
-	$affected = dbexec($sql, [123]);
-	echo "Deleted rows: " . $affected;
-} catch (\Throwable $e) {
-	error_log($e->getMessage());
-}
-```
-
-说明：
-- `dbexec` 对于 SELECT 返回结果数组（fetchAll），对于 INSERT/UPDATE/DELETE 返回受影响的行数。
-- 当你需要多次复用连接或在事务中执行多个语句时，可先用 `dbnew(config('database.mysql.default'))` 获取 PDO 实例并把它传给 `dbexec(..., $db)`，或在 PDO 上手动管理事务。
-
-### 查询单行或单字段的常见用法
-
-要从 `dbexec` 的返回结果中取得单行或单字段，常见做法是对 SQL 加上 `LIMIT 1`，然后检查结果数组的第一项：
-
-- 查询单行（返回一条记录）：
-
-```php
-$rows = dbexec('SELECT id, name, email FROM users WHERE id = ? LIMIT 1', [123]);
-$row = $rows[0] ?? null;
-if ($row) {
-	// 使用 $row['field'] 访问字段
-	echo $row['name'];
-} else {
-	// 未找到记录
-}
-```
-
-- 查询单字段（只需要一个值，例如某条记录的某个列）：
-
-```php
-$rows = dbexec('SELECT email FROM users WHERE id = ? LIMIT 1', [123]);
-$email = $rows[0]['email'] ?? null;
-echo $email;
-```
-
-
-- Q: 如何增加新的路由？
-	A: 在 `config/route.php` 中添加一条映射，确保对应 `controller` 类存在并有对应方法。
-
--- Q: 如何连接 Redis / MySQL？
-	A: 在 `config/database.php` 中配置连接信息；在运行时通过 `dbnew()` 获取 PDO，或创建 Redis 客户端（例如使用 `predis/predis` 或 PHP 的 `ext-redis` 扩展）并在业务代码中直接使用或封装为服务。
-
----
-
-## asyncMysqliBatch（并发异步 MySQL 查询）
-
-框架在 `app/functions.php` 中提供了 `asyncMysqliBatch` 辅助函数，用于在短时间内并发执行多条 SQL（基于 mysqli 的异步查询 MYSQLI_ASYNC）。适合在需要并行执行多个独立查询并等待结果的场景（例如同时调用多个慢查询或测试并发行为）。
-
-函数签名：
-
-```php
-function asyncMysqliBatch(array $dbConfig, array $sqls, int $concurrency = null, float $pollTimeout = 1.0)
-```
-
-参数说明：
-- `$dbConfig`：数据库连接配置数组，至少包括 `host`、`user`、`password`、`database`，可选 `port`、`charset`。
-- `$sqls`：关联数组，`key => sql`，返回结果会按相同的 key 组织。
-- `$concurrency`：并发连接数上限（默认等于 SQL 数量）。
-- `$pollTimeout`：轮询等待时间（单位：秒，支持小数），用于 `mysqli_poll` 的超时参数，需大于单条查询的最长预期耗时以避免误判超时。
-
-返回值：按输入 `$sqls` 的键返回结果数组，每个子项包含：
-
-```php
-[
-	'success' => true|false,
-	'type' => 'select'|'modify'|'unknown',
-	'data' => array|null, // select 返回 fetch_all 结果，modify 返回受影响行数
-	'error' => string|null
-]
-```
-
-示例（控制器中调用）：
-
-```php
-$dbCfg = [
-	'host'=>'127.0.0.1', 'user'=>'root', 'password'=>'pwd', 'database'=>'test', 'port'=>3306
+return [
+    'mysql' => [
+        'default' => [
+            'dsn' => 'mysql:host=127.0.0.1;dbname=test;charset=utf8mb4',
+            'user' => 'root',
+            'password' => ''
+        ]
+    ]
 ];
+```
+
+#### 执行 SQL
+
+```php
+// 查询数据
+$users = dbexec('SELECT * FROM users WHERE status = ?', [1]);
+
+// 插入数据
+dbexec('INSERT INTO users (name, email) VALUES (?, ?)', ['张三', 'zhangsan@example.com']);
+
+// 更新数据
+dbexec('UPDATE users SET status = ? WHERE id = ?', [0, 1]);
+
+// 删除数据
+dbexec('DELETE FROM users WHERE id = ?', [1]);
+
+// 获取最后插入的 ID
+$id = dbexec('lastInsertId');
+```
+
+#### 事务处理
+
+```php
+try {
+    // 开始事务
+    $db = dbnew(config('database.mysql.default'));
+    $db->beginTransaction();
+    
+    // 执行多个操作
+    dbexec('INSERT INTO orders (...) VALUES (...)', [...], $db);
+    dbexec('UPDATE inventory SET quantity = quantity - 1 WHERE id = ?', [1], $db);
+    
+    // 提交事务
+    $db->commit();
+} catch (\Throwable $e) {
+    // 回滚事务
+    $db->rollBack();
+    error_log($e->getMessage());
+}
+```
+
+#### 异步并发查询
+
+```php
+$dbConfig = [
+    'host' => '127.0.0.1',
+    'user' => 'root',
+    'password' => '',
+    'database' => 'test'
+];
+
 $sqls = [
-	'a' => 'SELECT SLEEP(1) AS slept',
-	'b' => 'SELECT SLEEP(2) AS slept',
-	'c' => 'SELECT SLEEP(3) AS slept',
+    'user' => 'SELECT * FROM users WHERE id = ?',
+    'order' => 'SELECT * FROM orders WHERE user_id = ?',
+    'product' => 'SELECT * FROM products LIMIT 10'
 ];
-$res = asyncMysqliBatch($dbCfg, $sqls, 3, 5.0);
-var_dump($res);
+
+$results = asyncMysqliBatch($dbConfig, $sqls, 3);
 ```
 
-重要注意事项：
+### 3. 配置管理
 
-- 需要在 PHP 中启用 `mysqli` 扩展（`php -m` 可检查）。
-- 单个 mysqli 连接上只能同时存在一个未完成的异步查询，因此实现会为并发创建多个连接，注意数据库最大连接与线程数量的限制；不要把过多并发设置得过大以免耗尽数据库资源。
-- `pollTimeout` 应至少大于最慢查询的预计耗时，否则任务会被标记为超时。
-- 异步查询会占用 MySQL 的线程资源（例如 `SELECT SLEEP()` 也是占用线程的），请在生产场景谨慎使用。
-- 该函数在 `app/functions.php` 中实现，若需要复用连接或在事务中使用，应修改为接受已有的 mysqli 对象数组或改用同步连接池设计。
+#### 读取配置
 
+```php
+// 获取整个数据库配置
+$dbConfig = config('database');
 
-## 性能速览表（单核、PHP-FPM + OPcache、简单 JSON API）
+// 获取默认数据库配置
+$defaultDb = config('database.mysql.default');
 
-| 框架 | QPS（requests/s）预估区间 | 启动开销 | 路由性能 | 复杂中间件链 | ORM | 特点总结 |
-|---|---:|---|---|---|---|---|
-| Plan9 | 6,000 – 12,000 | 极低 | 极快 | 无 | 无 | ⚡ 极轻量、极高性能、几乎零额外开销 |
-| Slim | 4,000 – 8,000 | 低 | 快 | 可选较少 | 无 | 轻量化、短生命周期、保留基础组件 |
-| Lumen | 2,500 – 5,000 | 中等 | 中等 | 简化版 Laravel | 有（Eloquent） | 偏性能的 Laravel 微框架，但仍偏重 |
-| Laravel | 500 – 1,500 | 高 | 中／慢 | 多中间件、IOC、事件体系 | Eloquent（较慢） | 全功能框架，性能最低但特性最全 |
+// 获取嵌套配置
+$dbHost = config('database.mysql.default.dsn');
+```
+
+### 4. 常用工具函数
+
+#### HTTP 请求
+
+```php
+// 发送 GET 请求
+$response = http('https://api.example.com/users');
+
+// 发送 POST 请求
+$response = http('https://api.example.com/users', [
+    'method' => 'POST',
+    'body' => ['name' => 'Test', 'email' => 'test@example.com'],
+    'headers' => ['Content-Type' => 'application/json']
+]);
+```
+
+#### 文件操作
+
+```php
+// 保存文件
+fileSave('/path/to/file.txt', 'Hello Plan9');
+
+// 加密数据
+$encrypted = encrypt('secret data', 'your-key');
+
+// 解密数据
+$decrypted = decrypt($encrypted, 'your-key');
+```
+
+## 📊 性能对比
+
+| 框架 | QPS 预估区间 | 启动开销 | 路由性能 | 中间件 | ORM | 特点 |
+|------|------------|---------|---------|--------|-----|------|
+| Plan9 | 6,000-12,000 | 极低 | 极快 | 无 | 无 | ⚡ 极轻量、高性能 |
+| Slim | 4,000-8,000 | 低 | 快 | 少量 | 无 | 轻量级 |
+| Lumen | 2,500-5,000 | 中等 | 中等 | 简化版 | 有 | Laravel 微框架 |
+| Laravel | 500-1,500 | 高 | 中/慢 | 丰富 | 有 | 全功能框架 |
 
 ### 🔍 为什么 Plan9 明显更快？
 
-✔ 1. 无 IOC 容器（Laravel 最大开销来源）
+#### ✔️ 1. 无 IOC 容器（Laravel 最大开销来源）
+Laravel/Lumen 的服务容器会构建、绑定、解析大量类 → 资源消耗大
+Plan9：基本无容器 → 直接执行，启动极快
 
-Laravel/Lumen 的服务容器会构建、绑定、解析大量类 → 重。
+#### ✔️ 2. 无 ORM
+Eloquent 是“方便但慢”的典型代表，存在额外的对象映射开销
+Plan9/Slim 使用原生 PDO → 直接操作数据库，性能更优
 
-Plan9：基本无容器 → 直接执行。
+#### ✔️ 3. 无中间件处理链
+Laravel 一次请求可能经过 8~20 个中间件 → 处理链长
+Plan9 只有路由 → 控制器 → 响应，路径最短
 
-✔ 2. 无 ORM
+#### ✔️ 4. 极简设计带来的综合优势
+- **更少的运行时对象与依赖**：默认不注入大量服务或使用反射/大量对象实例化
+- **直接的视图渲染**：使用 PHP include（原生），减少模板解析/编译开销
+- **贴近底层的 I/O 与数据库处理**：使用 PDO 并合理配置，减少抽象层带来的额外开销
 
-Eloquent 是“方便但慢”的典型代表。
-Slim/Plan9 使用原生 PDO → 很轻快。
+这些设计在常见的 CRUD/API 场景下能带来更低的响应延迟和更高的 requests/sec，尤其在高并发、短请求生命周期的场景中优势明显。
 
-✔ 3. 无中间件处理链
+## 🚀 部署建议
 
-Laravel 一次请求可能经过 8~20 个中间件。
-Plan9 只有路由 → 控制器。
+### 生产环境
 
-✔ 4. 无模板解析
+#### 使用 Nginx
 
-Plan9 使用 PHP include（原生）
-Lumen/Slim 视图轻量
-Laravel Blade 模板需要解析与缓存 → 内耗大。
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+    root /path/to/plan9/public;
+    index index.php;
 
-将以上内容加入使用文档，便于对比与选型。
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+```
+
+#### 使用 PHP-FPM
+
+```bash
+# 安装 PHP-FPM
+sudo apt-get install php7.4-fpm
+
+# 启动 PHP-FPM
+sudo systemctl start php7.4-fpm
+```
+
+#### 启用 OPcache
+
+在 `php.ini` 中启用 OPcache：
+
+```ini
+[opcache]
+zend_extension=opcache.so
+opcache.enable=1
+opcache.enable_cli=1
+opcache.memory_consumption=128
+opcache.interned_strings_buffer=8
+opcache.max_accelerated_files=10000
+opcache.validate_timestamps=1
+opcache.revalidate_freq=60
+```
+
+## 📝 开发规范
+
+1. **命名规范**：
+   - 文件名：首字母大写的驼峰命名
+   - 类名：首字母大写的驼峰命名
+   - 方法名：首字母小写的驼峰命名
+   - 变量名：下划线分隔或驼峰命名
+
+2. **代码风格**：
+   - 使用 4 个空格缩进
+   - 遵循 PSR-12 代码规范
+   - 保持函数简洁，单一职责
+
+3. **安全规范**：
+   - 始终使用参数化查询
+   - 验证用户输入
+   - 过滤输出内容
+   - 不要在代码中硬编码敏感信息
+
+## 🔧 扩展建议
+
+### 日志系统
+建议使用 `monolog/monolog`：
+
+```bash
+composer require monolog/monolog
+```
+
+### 缓存系统
+建议使用 `predis/predis`：
+
+```bash
+composer require predis/predis
+```
+
+### 验证系统
+建议使用 `respect/validation`：
+
+```bash
+composer require respect/validation
+```
+
+## 📄 许可证
+
+Apache License Version 2.0
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 支持
+
+如有问题，请查看 [CHANGELOG.md](CHANGELOG.md) 或提交 Issue。
+
+---
+
+**Plan9** - 让 PHP 开发更简单、更高效！🚀
 
 
 
